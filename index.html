@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>efood - Delivery de comida</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;400;700;900&display=swap" rel="stylesheet" />
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.26.0/babel.min.js"></script>
+  <script src="https://unpkg.com/react-router-dom@6.28.0/dist/umd/react-router-dom.production.min.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:Roboto,sans-serif}
+    body{background:#FFF8F2;color:#E66767}
+    a{text-decoration:none;color:inherit}
+    button{cursor:pointer;border:none;font-family:inherit}
+    ul{list-style:none}
+    img{max-width:100%;display:block}
+    input{font-family:inherit}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, createContext, useContext } = React;
+const { BrowserRouter, Routes, Route, Link, useNavigate, useParams, Navigate } = ReactRouterDOM;
+const C = { primary:'#E66767', secondary:'#FFEBD9', bg:'#FFF8F2', white:'#fff' };
+const formatPrice = p => p.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const onlyDigits = v => v.replace(/\D/g,'');
+const maskZip = v => { const d=onlyDigits(v).slice(0,8); return d.length<=5?d:`${d.slice(0,5)}-${d.slice(5)}`; };
+const maskCard = v => onlyDigits(v).slice(0,16).replace(/(\d{4})(?=\d)/g,'$1 ').trim();
+
+const restaurants = [
+  {id:1,titulo:'Hioki Sushi',destacado:true,tipo:'Japonesa',avaliacao:4.9,descricao:'Peça já o melhor da culinária japonesa no conforto da sua casa!',capa:'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=800&q=80',cardapio:[
+    {id:1,nome:'Combo Sushi',descricao:'16 peças: salmão, atum, peixe branco e camarão.',foto:'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=400&q=80',porcao:'2 pessoas',preco:88},
+    {id:2,nome:'Sashimi de Salmão',descricao:'10 fatias de salmão fresco com wasabi e gengibre.',foto:'https://images.unsplash.com/photo-1583623025817-d180a2221d0a?w=400&q=80',porcao:'1 pessoa',preco:45},
+    {id:3,nome:'Temaki de Atum',descricao:'Temaki crocante com atum e cream cheese.',foto:'https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?w=400&q=80',porcao:'1 pessoa',preco:22},
+    {id:4,nome:'Yakisoba',descricao:'Macarrão oriental com legumes e frango.',foto:'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&q=80',porcao:'1 pessoa',preco:38}
+  ]},
+  {id:2,titulo:'La Dolce Vita Trattoria',destacado:true,tipo:'Italiana',avaliacao:4.6,descricao:'Autêntica cozinha italiana! Massas frescas e pizzas crocantes.',capa:'https://images.unsplash.com/photo-1516100882582-96c3a05fe590?w=800&q=80',cardapio:[
+    {id:7,nome:'Pizza Margherita',descricao:'Molho de tomate, mussarela de búfala e manjericão.',foto:'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400&q=80',porcao:'2 pessoas',preco:55},
+    {id:8,nome:'Spaghetti Carbonara',descricao:'Massa com bacon, ovos e pecorino.',foto:'https://images.unsplash.com/photo-1612874742237-990ff7fdbb97?w=400&q=80',porcao:'1 pessoa',preco:42},
+    {id:9,nome:'Lasagna Bolonhesa',descricao:'Camadas de massa, bolonhesa e queijo gratinado.',foto:'https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=400&q=80',porcao:'1 pessoa',preco:48}
+  ]},
+  {id:3,titulo:'Burger House',destacado:false,tipo:'Americana',avaliacao:4.7,descricao:'Burgers artesanais com carne angus.',capa:'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&q=80',cardapio:[
+    {id:13,nome:'Classic Burger',descricao:'180g, cheddar, alface, tomate e molho especial.',foto:'https://images.unsplash.com/photo-1550547660-d9450f859349?w=400&q=80',porcao:'1 pessoa',preco:32},
+    {id:14,nome:'Double Cheese',descricao:'Dois hambúrgueres, dobro de queijo e bacon.',foto:'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&q=80',porcao:'1 pessoa',preco:42}
+  ]},
+  {id:4,titulo:'Cantina Mexicana',destacado:false,tipo:'Mexicana',avaliacao:4.5,descricao:'Tacos, burritos e guacamole fresquinho.',capa:'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800&q=80',cardapio:[
+    {id:17,nome:'Tacos de Carne',descricao:'3 tacos com carne desfiada.',foto:'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=400&q=80',porcao:'1 pessoa',preco:28},
+    {id:18,nome:'Burrito Supremo',descricao:'Tortilha com feijão, arroz, carne e queijo.',foto:'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&q=80',porcao:'1 pessoa',preco:35}
+  ]},
+  {id:5,titulo:'Green Bowl',destacado:false,tipo:'Saudável',avaliacao:4.8,descricao:'Bowls nutritivos e saladas frescas.',capa:'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&q=80',cardapio:[
+    {id:21,nome:'Buddha Bowl',descricao:'Quinoa, grão-de-bico, abacate e tahine.',foto:'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80',porcao:'1 pessoa',preco:36}
+  ]},
+  {id:6,titulo:'Churrasco do Sul',destacado:false,tipo:'Brasileira',avaliacao:4.9,descricao:'Carnes nobres no ponto certo.',capa:'https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=800&q=80',cardapio:[
+    {id:24,nome:'Picanha na Brasa',descricao:'300g de picanha com farofa e vinagrete.',foto:'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&q=80',porcao:'1 pessoa',preco:68}
+  ]}
+];
+
+const AuthCtx = createContext(null);
+function AuthProvider({children}) {
+  const [user,setUser]=useState(null);
+  const [loading,setLoading]=useState(true);
+  useEffect(()=>{try{const s=localStorage.getItem('efood_session');if(s)setUser(JSON.parse(s))}catch(e){}setLoading(false)},[]);
+  const login=async({email,password})=>{
+    const users=JSON.parse(localStorage.getItem('efood_users')||'[]');
+    const f=users.find(u=>u.email.toLowerCase()===email.toLowerCase()&&u.password===password);
+    if(!f)return{success:false,error:'E-mail ou senha inválidos.'};
+    const {password:_,...safe}=f;setUser(safe);localStorage.setItem('efood_session',JSON.stringify(safe));return{success:true};
+  };
+  const register=async({name,email,password})=>{
+    const users=JSON.parse(localStorage.getItem('efood_users')||'[]');
+    if(users.some(u=>u.email.toLowerCase()===email.toLowerCase()))return{success:false,error:'Este e-mail já está cadastrado.'};
+    if(password.length<6)return{success:false,error:'A senha deve ter no mínimo 6 caracteres.'};
+    if(!name.trim())return{success:false,error:'Informe seu nome.'};
+    const nu={id:crypto.randomUUID(),name:name.trim(),email:email.toLowerCase().trim(),password};
+    users.push(nu);localStorage.setItem('efood_users',JSON.stringify(users));
+    const {password:_,...safe}=nu;setUser(safe);localStorage.setItem('efood_session',JSON.stringify(safe));return{success:true};
+  };
+  const logout=()=>{setUser(null);localStorage.removeItem('efood_session')};
+  return <AuthCtx.Provider value={{user,isAuthenticated:!!user,loading,login,register,logout}}>{children}</AuthCtx.Provider>;
+}
+const useAuth=()=>useContext(AuthCtx);
+
+function Header({cartCount=0,onCartClick,variant='home'}) {
+  const {user,isAuthenticated,logout}=useAuth();
+  return (
+    <header style={{background:C.secondary,padding:'40px 0',textAlign:'center'}}>
+      <div style={{maxWidth:1024,margin:'0 auto',padding:'0 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:16}}>
+        {variant==='restaurant'?<Link to="/" style={{fontSize:18,fontWeight:900}}>Restaurantes</Link>:<div style={{minWidth:140}}/>}
+        <Link to="/"><h1 style={{fontSize:36,fontWeight:900}}>efood</h1></Link>
+        {variant==='restaurant'?(
+          <button onClick={onCartClick} style={{background:'transparent',fontSize:18,fontWeight:900,color:C.primary}}>{cartCount} produto(s) no carrinho</button>
+        ):(
+          <div style={{display:'flex',gap:12,alignItems:'center',minWidth:140,justifyContent:'flex-end'}}>
+            {isAuthenticated?<>
+              <span style={{fontSize:14,fontWeight:700}}>Olá, {user.name.split(' ')[0]}</span>
+              <button onClick={logout} style={{background:C.primary,color:C.secondary,fontSize:12,fontWeight:700,padding:'6px 12px'}}>Sair</button>
+            </>:<>
+              <Link to="/login" style={{fontSize:14,fontWeight:700,textDecoration:'underline'}}>Entrar</Link>
+              <Link to="/register" style={{fontSize:14,fontWeight:700,textDecoration:'underline'}}>Cadastrar</Link>
+            </>}
+          </div>
+        )}
+      </div>
+    </header>
+  );
+}
+
+function Footer() {
+  return (
+    <footer style={{background:C.secondary,padding:'40px 16px',textAlign:'center',marginTop:80}}>
+      <h2 style={{fontSize:36,fontWeight:900,marginBottom:32}}>efood</h2>
+      <p style={{fontSize:10,maxWidth:480,margin:'0 auto',lineHeight:1.4}}>A efood é uma plataforma para divulgação de estabelecimentos.</p>
+    </footer>
+  );
+}
+
+function Home() {
+  return (<>
+    <Header/>
+    <section style={{background:C.secondary,padding:'0 0 40px',textAlign:'center'}}>
+      <h2 style={{fontSize:32,fontWeight:900,maxWidth:540,margin:'0 auto',lineHeight:1.2}}>Viva experiências gastronômicas<br/>no conforto da sua casa</h2>
+    </section>
+    <div style={{maxWidth:1024,margin:'0 auto',padding:'80px 16px 0'}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))',gap:40}}>
+        {restaurants.map(r=>(
+          <article key={r.id} style={{background:C.white,border:`1px solid ${C.primary}`,display:'flex',flexDirection:'column'}}>
+            <div style={{position:'relative',height:200,overflow:'hidden'}}>
+              <img src={r.capa} alt={r.titulo} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+              <div style={{position:'absolute',top:12,right:12,display:'flex',gap:6}}>
+                {r.destacado&&<span style={{background:C.primary,color:C.secondary,fontSize:12,fontWeight:700,padding:'4px 6px'}}>Destaque da semana</span>}
+                <span style={{background:C.primary,color:C.secondary,fontSize:12,fontWeight:700,padding:'4px 6px'}}>{r.tipo}</span>
+              </div>
+            </div>
+            <div style={{display:'flex',justifyContent:'space-between',padding:'8px 8px 0'}}>
+              <h3 style={{fontSize:18,fontWeight:700}}>{r.titulo}</h3>
+              <span style={{fontSize:18,fontWeight:700}}>{r.avaliacao.toFixed(1)} <span style={{color:'#ffb930'}}>★</span></span>
+            </div>
+            <p style={{fontSize:14,lineHeight:'22px',padding:'12px 8px',flex:1}}>{r.descricao}</p>
+            <Link to={`/restaurant/${r.id}`} style={{background:C.primary,color:C.secondary,fontSize:14,fontWeight:700,padding:'4px 8px',margin:'0 8px 8px',width:'fit-content'}}>Saiba mais</Link>
+          </article>
+        ))}
+      </div>
+    </div>
+    <Footer/>
+  </>);
+}
+
+function CartSidebar({isOpen,items,onClose,onRemove,onOrderComplete,isAuthenticated,onRequireLogin}) {
+  const [step,setStep]=useState('cart');
+  const [delivery,setDelivery]=useState({receiver:'',address:'',city:'',zipCode:'',number:'',complement:''});
+  const [payment,setPayment]=useState({cardName:'',cardNumber:'',cvv:'',expiresMonth:'',expiresYear:''});
+  const [error,setError]=useState('');
+  const [orderId,setOrderId]=useState('');
+  const total=items.reduce((a,i)=>a+i.preco*i.quantity,0);
+
+  useEffect(()=>{
+    if(!isOpen){setStep('cart');setError('');setDelivery({receiver:'',address:'',city:'',zipCode:'',number:'',complement:''});setPayment({cardName:'',cardNumber:'',cvv:'',expiresMonth:'',expiresYear:''});setOrderId('');}
+  },[isOpen]);
+
+  if(!isOpen)return null;
+
+  const btn={background:C.secondary,color:C.primary,fontSize:14,fontWeight:700,padding:'6px 0',width:'100%',marginBottom:8};
+  const field={display:'flex',flexDirection:'column',gap:8,marginBottom:8};
+  const label={fontSize:14,fontWeight:700};
+  const input={background:C.secondary,border:'none',padding:8,fontSize:14,color:C.primary,width:'100%'};
+
+  const goDelivery=()=>{
+    if(!isAuthenticated){onRequireLogin();return;}
+    if(!items.length)return;
+    setError('');setStep('delivery');
+  };
+
+  const submitDelivery=e=>{
+    e.preventDefault();
+    if(!delivery.receiver.trim())return setError('Informe quem irá receber.');
+    if(!delivery.address.trim())return setError('Informe o endereço.');
+    if(!delivery.city.trim())return setError('Informe a cidade.');
+    if(onlyDigits(delivery.zipCode).length!==8)return setError('CEP inválido.');
+    if(!delivery.number.trim())return setError('Informe o número.');
+    setError('');setStep('payment');
+  };
+
+  const submitPayment=e=>{
+    e.preventDefault();
+    if(!payment.cardName.trim())return setError('Informe o nome no cartão.');
+    if(onlyDigits(payment.cardNumber).length<13)return setError('Número do cartão inválido.');
+    if(onlyDigits(payment.cvv).length<3)return setError('CVV inválido.');
+    if(!payment.expiresMonth||Number(payment.expiresMonth)<1||Number(payment.expiresMonth)>12)return setError('Mês inválido.');
+    if(!payment.expiresYear||payment.expiresYear.length<2)return setError('Ano inválido.');
+    setError('');
+    setOrderId(String(Math.floor(Math.random()*900000)+100000));
+    setStep('success');
+  };
+
+  const finish=()=>{onOrderComplete();onClose();};
+
+  return (
+    <div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.8)',zIndex:1000,display:'flex',justifyContent:'flex-end'}}>
+      <aside onClick={e=>e.stopPropagation()} style={{background:C.primary,color:C.secondary,width:360,maxWidth:'100%',height:'100%',padding:'32px 8px',overflowY:'auto'}}>
+        {step==='cart'&&(<>
+          <h2 style={{fontSize:16,fontWeight:700,marginBottom:16,padding:'0 8px'}}>Carrinho</h2>
+          {items.length===0?<p style={{textAlign:'center',padding:32}}>O carrinho está vazio</p>:(<>
+            <ul style={{display:'flex',flexDirection:'column',gap:16,marginBottom:40}}>
+              {items.map(item=>(
+                <li key={item.id} style={{background:C.secondary,color:C.primary,display:'flex',gap:8,padding:8,position:'relative'}}>
+                  <img src={item.foto} alt={item.nome} style={{width:80,height:80,objectFit:'cover'}}/>
+                  <div style={{flex:1}}><h3 style={{fontSize:16,fontWeight:900,marginBottom:12}}>{item.nome}</h3><p style={{fontSize:14}}>{formatPrice(item.preco)}</p></div>
+                  <button onClick={()=>onRemove(item.id)} style={{position:'absolute',bottom:8,right:8,background:'transparent',fontSize:16}}>🗑️</button>
+                </li>
+              ))}
+            </ul>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:14,fontWeight:700,marginBottom:16,padding:'0 8px'}}>
+              <span>Valor total</span><span>{formatPrice(total)}</span>
+            </div>
+            <button style={btn} onClick={goDelivery}>Continuar com a entrega</button>
+          </>)}
+        </>)}
+
+        {step==='delivery'&&(<>
+          <h2 style={{fontSize:16,fontWeight:700,marginBottom:16,padding:'0 8px'}}>Entrega</h2>
+          {error&&<p style={{fontSize:12,padding:8,background:'rgba(0,0,0,.2)',marginBottom:8}}>{error}</p>}
+          <form onSubmit={submitDelivery} style={{padding:'0 8px'}}>
+            <div style={field}><label style={label}>Quem irá receber</label><input style={input} value={delivery.receiver} onChange={e=>setDelivery({...delivery,receiver:e.target.value})} required/></div>
+            <div style={field}><label style={label}>Endereço</label><input style={input} value={delivery.address} onChange={e=>setDelivery({...delivery,address:e.target.value})} required/></div>
+            <div style={field}><label style={label}>Cidade</label><input style={input} value={delivery.city} onChange={e=>setDelivery({...delivery,city:e.target.value})} required/></div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+              <div style={field}><label style={label}>CEP</label><input style={input} value={delivery.zipCode} onChange={e=>setDelivery({...delivery,zipCode:maskZip(e.target.value)})} placeholder="00000-000" required/></div>
+              <div style={field}><label style={label}>Número</label><input style={input} value={delivery.number} onChange={e=>setDelivery({...delivery,number:e.target.value})} required/></div>
+            </div>
+            <div style={field}><label style={label}>Complemento (opcional)</label><input style={input} value={delivery.complement} onChange={e=>setDelivery({...delivery,complement:e.target.value})}/></div>
+            <button type="submit" style={btn}>Continuar com o pagamento</button>
+            <button type="button" style={btn} onClick={()=>{setError('');setStep('cart')}}>Voltar para o carrinho</button>
+          </form>
+        </>)}
+
+        {step==='payment'&&(<>
+          <h2 style={{fontSize:16,fontWeight:700,marginBottom:16,padding:'0 8px'}}>Pagamento - Valor a pagar {formatPrice(total)}</h2>
+          {error&&<p style={{fontSize:12,padding:8,background:'rgba(0,0,0,.2)',marginBottom:8}}>{error}</p>}
+          <form onSubmit={submitPayment} style={{padding:'0 8px'}}>
+            <div style={field}><label style={label}>Nome no cartão</label><input style={input} value={payment.cardName} onChange={e=>setPayment({...payment,cardName:e.target.value})} required/></div>
+            <div style={field}><label style={label}>Número do cartão</label><input style={input} value={payment.cardNumber} onChange={e=>setPayment({...payment,cardNumber:maskCard(e.target.value)})} placeholder="0000 0000 0000 0000" required/></div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+              <div style={field}><label style={label}>CVV</label><input style={input} value={payment.cvv} onChange={e=>setPayment({...payment,cvv:onlyDigits(e.target.value).slice(0,4)})} required/></div>
+              <div style={field}><label style={label}>Mês de vencimento</label><input style={input} value={payment.expiresMonth} onChange={e=>setPayment({...payment,expiresMonth:onlyDigits(e.target.value).slice(0,2)})} placeholder="MM" required/></div>
+            </div>
+            <div style={field}><label style={label}>Ano de vencimento</label><input style={input} value={payment.expiresYear} onChange={e=>setPayment({...payment,expiresYear:onlyDigits(e.target.value).slice(0,4)})} placeholder="AAAA" required/></div>
+            <button type="submit" style={btn}>Finalizar pagamento</button>
+            <button type="button" style={btn} onClick={()=>{setError('');setStep('delivery')}}>Voltar para a edição de endereço</button>
+          </form>
+        </>)}
+
+        {step==='success'&&(<>
+          <h2 style={{fontSize:16,fontWeight:700,marginBottom:16,padding:'0 8px'}}>Pedido realizado - {orderId}</h2>
+          <p style={{fontSize:14,fontWeight:700,padding:'0 8px 16px'}}>Número do pedido: {orderId}</p>
+          <p style={{fontSize:14,lineHeight:'22px',padding:'0 8px 24px'}}>
+            Estamos felizes em informar que seu pedido já está em processo de preparação e, em breve, será entregue no endereço fornecido.
+            <br/><br/>
+            Gostaríamos de ressaltar que nossos entregadores não estão autorizados a realizar cobranças extras.
+            <br/><br/>
+            Lembre-se da importância de higienizar as mãos após o recebimento do pedido, garantindo assim sua segurança e bem-estar durante a refeição.
+            <br/><br/>
+            Esperamos que desfrute de uma deliciosa e agradável experiência gastronômica. Bom apetite!
+          </p>
+          <button style={{...btn,margin:'0 8px',width:'calc(100% - 16px)'}} onClick={finish}>Concluir</button>
+        </>)}
+      </aside>
+    </div>
+  );
+}
+
+function RestaurantPage() {
+  const {id}=useParams();
+  const navigate=useNavigate();
+  const {isAuthenticated}=useAuth();
+  const restaurant=restaurants.find(r=>r.id===Number(id));
+  const [selected,setSelected]=useState(null);
+  const [modal,setModal]=useState(false);
+  const [cartOpen,setCartOpen]=useState(false);
+  const [cart,setCart]=useState([]);
+  if(!restaurant)return <Navigate to="/" replace/>;
+  const add=item=>setCart(p=>p.find(i=>i.id===item.id)?p:[...p,{...item,quantity:1}]);
+
+  return (<>
+    <Header variant="restaurant" cartCount={cart.length} onCartClick={()=>setCartOpen(true)}/>
+    <div style={{height:260,backgroundImage:`linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,.5)),url(${restaurant.capa})`,backgroundSize:'cover',backgroundPosition:'center',display:'flex',alignItems:'flex-end'}}>
+      <div style={{maxWidth:1024,width:'100%',margin:'0 auto',padding:'24px 16px',color:'#fff'}}>
+        <p style={{fontSize:28,fontWeight:100,marginBottom:60}}>{restaurant.tipo}</p>
+        <h2 style={{fontSize:28,fontWeight:900}}>{restaurant.titulo}</h2>
+      </div>
+    </div>
+    <div style={{maxWidth:1024,margin:'0 auto',padding:'48px 16px 0'}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))',gap:24}}>
+        {restaurant.cardapio.map(item=>(
+          <article key={item.id} style={{background:C.primary,color:C.secondary,padding:8,display:'flex',flexDirection:'column'}}>
+            <img src={item.foto} alt={item.nome} style={{width:'100%',height:150,objectFit:'cover',marginBottom:8}}/>
+            <h3 style={{fontSize:16,fontWeight:900,marginBottom:8}}>{item.nome}</h3>
+            <p style={{fontSize:14,lineHeight:'22px',marginBottom:8,flex:1}}>{item.descricao}</p>
+            <button onClick={()=>{setSelected(item);setModal(true)}} style={{background:C.secondary,color:C.primary,fontSize:14,fontWeight:700,padding:'4px 0',width:'100%'}}>Mais detalhes</button>
+          </article>
+        ))}
+      </div>
+    </div>
+    <Footer/>
+    {modal&&selected&&(
+      <div onClick={()=>setModal(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.8)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:16}}>
+        <div onClick={e=>e.stopPropagation()} style={{background:C.primary,color:C.secondary,maxWidth:900,width:'100%',position:'relative',padding:28}}>
+          <button onClick={()=>setModal(false)} style={{position:'absolute',top:8,right:8,background:'transparent',color:C.secondary,fontSize:28}}>×</button>
+          <div style={{display:'flex',gap:24,flexWrap:'wrap'}}>
+            <img src={selected.foto} alt={selected.nome} style={{width:260,height:260,objectFit:'cover'}}/>
+            <div style={{flex:1,display:'flex',flexDirection:'column'}}>
+              <h2 style={{fontSize:18,fontWeight:900,marginBottom:12}}>{selected.nome}</h2>
+              <p style={{fontSize:14,lineHeight:'22px',marginBottom:12}}>{selected.descricao}</p>
+              <p style={{fontSize:14,marginBottom:12}}>Serve: {selected.porcao}</p>
+              <button onClick={()=>{add(selected);setModal(false)}} style={{background:C.secondary,color:C.primary,fontSize:14,fontWeight:700,padding:'6px 10px',width:'fit-content',marginTop:'auto'}}>
+                Adicionar ao carrinho - {formatPrice(selected.preco)}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    <CartSidebar
+      isOpen={cartOpen}
+      items={cart}
+      onClose={()=>setCartOpen(false)}
+      onRemove={id=>setCart(c=>c.filter(i=>i.id!==id))}
+      onOrderComplete={()=>setCart([])}
+      isAuthenticated={isAuthenticated}
+      onRequireLogin={()=>{setCartOpen(false);navigate('/login')}}
+    />
+  </>);
+}
+
+function AuthForm({mode}) {
+  const {login,register,isAuthenticated,loading}=useAuth();
+  const navigate=useNavigate();
+  const [name,setName]=useState('');
+  const [email,setEmail]=useState('');
+  const [password,setPassword]=useState('');
+  const [confirm,setConfirm]=useState('');
+  const [error,setError]=useState('');
+  const [busy,setBusy]=useState(false);
+  if(loading)return null;
+  if(isAuthenticated)return <Navigate to="/" replace/>;
+  const submit=async e=>{
+    e.preventDefault();setError('');
+    if(mode==='register'&&password!==confirm){setError('As senhas não coincidem.');return;}
+    setBusy(true);
+    const r=mode==='login'?await login({email,password}):await register({name,email,password});
+    setBusy(false);
+    if(r.success)navigate('/');else setError(r.error||'Erro.');
+  };
+  const inp={border:`1px solid ${C.primary}`,padding:'10px 12px',fontSize:14,background:C.bg,width:'100%',outline:'none'};
+  return (
+    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column'}}>
+      <Header/>
+      <main style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',padding:40}}>
+        <div style={{background:C.white,border:`1px solid ${C.primary}`,maxWidth:420,width:'100%',padding:'32px 24px'}}>
+          <h2 style={{fontSize:24,fontWeight:900,textAlign:'center',marginBottom:8}}>{mode==='login'?'Entrar':'Criar conta'}</h2>
+          <form onSubmit={submit} style={{display:'flex',flexDirection:'column',gap:16}}>
+            {error&&<p style={{fontSize:13,color:'#c0392b',background:'#fdecea',padding:'8px 12px'}}>{error}</p>}
+            {mode==='register'&&<div><label style={{fontSize:14,fontWeight:700,display:'block',marginBottom:6}}>Nome</label><input style={inp} value={name} onChange={e=>setName(e.target.value)} required/></div>}
+            <div><label style={{fontSize:14,fontWeight:700,display:'block',marginBottom:6}}>E-mail</label><input style={inp} type="email" value={email} onChange={e=>setEmail(e.target.value)} required/></div>
+            <div><label style={{fontSize:14,fontWeight:700,display:'block',marginBottom:6}}>Senha</label><input style={inp} type="password" value={password} onChange={e=>setPassword(e.target.value)} required minLength={6}/></div>
+            {mode==='register'&&<div><label style={{fontSize:14,fontWeight:700,display:'block',marginBottom:6}}>Confirmar senha</label><input style={inp} type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} required minLength={6}/></div>}
+            <button type="submit" disabled={busy} style={{background:C.primary,color:C.secondary,fontSize:14,fontWeight:700,padding:12}}>{busy?'Aguarde...':mode==='login'?'Entrar':'Cadastrar'}</button>
+          </form>
+          <p style={{marginTop:24,textAlign:'center',fontSize:14}}>
+            {mode==='login'?<>Não tem conta? <Link to="/register" style={{fontWeight:700,textDecoration:'underline'}}>Cadastre-se</Link></>:<>Já tem conta? <Link to="/login" style={{fontWeight:700,textDecoration:'underline'}}>Entrar</Link></>}
+          </p>
+        </div>
+      </main>
+      <Footer/>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Home/>}/>
+          <Route path="/restaurant/:id" element={<RestaurantPage/>}/>
+          <Route path="/login" element={<AuthForm mode="login"/>}/>
+          <Route path="/register" element={<AuthForm mode="register"/>}/>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
