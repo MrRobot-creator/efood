@@ -45,6 +45,12 @@ export const Container = styled.div`
   padding: 56px 16px 0;
 `
 
+export const Message = styled.p`
+  text-align: center;
+  padding: 80px 16px;
+  font-size: 18px;
+`
+
 export const MenuList = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);

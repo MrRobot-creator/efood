@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, Navigate, useNavigate } from 'react-router-dom'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
@@ -6,27 +6,64 @@ import MenuItem from '../../components/MenuItem'
 import Modal from '../../components/Modal'
 import Cart from '../../components/Cart'
 import { useAuth } from '../../contexts/AuthContext'
-import { restaurants } from '../../data/restaurants'
-import { MenuItem as MenuItemType, CartItem } from '../../types'
+import { fetchRestaurants } from '../../services/api'
+import { MenuItem as MenuItemType, CartItem, Restaurant } from '../../types'
 import {
   Banner,
   BannerContent,
   Category,
   Title,
   Container,
-  MenuList
+  MenuList,
+  Message
 } from './styles'
 
 const RestaurantPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
-  const restaurant = restaurants.find((r) => r.id === Number(id))
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState('')
 
   const [selectedItem, setSelectedItem] = useState<MenuItemType | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [cartItems, setCartItems] = useState<CartItem[]>([])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    let isActive = true
+
+    fetchRestaurants(controller.signal)
+      .then((data) => {
+        if (isActive) setRestaurants(data)
+      })
+      .catch(() => {
+        if (!isActive || controller.signal.aborted) {
+          return
+        }
+        setError('Não foi possível carregar o restaurante. Tente novamente.')
+      })
+      .finally(() => {
+        if (isActive) setIsLoading(false)
+      })
+
+    return () => {
+      isActive = false
+      controller.abort()
+    }
+  }, [])
+
+  const restaurant = restaurants.find((r) => r.id === Number(id))
+
+  if (isLoading) {
+    return <Message>Carregando restaurante...</Message>
+  }
+
+  if (error) {
+    return <Message role="alert">{error}</Message>
+  }
 
   if (!restaurant) {
     return <Navigate to="/" replace />

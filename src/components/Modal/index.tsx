@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { MenuItem } from '../../types'
 import {
   Overlay,
@@ -20,6 +21,17 @@ type Props = {
 }
 
 const Modal = ({ item, isOpen, onClose, onAddToCart }: Props) => {
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
+
   if (!isOpen || !item) return null
 
   const formatPrice = (price: number) =>
@@ -27,14 +39,19 @@ const Modal = ({ item, isOpen, onClose, onAddToCart }: Props) => {
 
   return (
     <Overlay onClick={onClose}>
-      <ModalContainer onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-        <CloseButton type="button" onClick={onClose}>
+      <ModalContainer
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="product-modal-title"
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+      >
+        <CloseButton type="button" aria-label="Fechar detalhes do produto" onClick={onClose}>
           ×
         </CloseButton>
         <Content>
           <Image src={item.foto} alt={item.nome} />
           <Info>
-            <Title>{item.nome}</Title>
+            <Title id="product-modal-title">{item.nome}</Title>
             <Description>{item.descricao}</Description>
             <Portion>Serve: {item.porcao}</Portion>
             <Button

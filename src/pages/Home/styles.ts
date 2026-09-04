@@ -6,6 +6,12 @@ export const Container = styled.div`
   padding: 80px 16px 0;
 `
 
+export const Message = styled.p`
+  text-align: center;
+  font-size: 18px;
+  padding: 32px 0;
+`
+
 export const List = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
