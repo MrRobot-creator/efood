@@ -8,11 +8,12 @@ export const FooterContainer = styled.footer`
 `
 
 export const Logo = styled.div`
-  h2 {
-    font-size: 36px;
-    font-weight: 900;
-    color: ${({ theme }) => theme.colors.primary};
-    margin-bottom: 32px;
+  img {
+    width: 132px;
+    height: auto;
+    display: block;
+    margin: 0 auto 32px;
+    object-fit: contain;
   }
 `
 

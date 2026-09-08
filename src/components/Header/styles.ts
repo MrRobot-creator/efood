@@ -27,12 +27,14 @@ export const HeaderContainer = styled.header<{ $variant: 'home' | 'restaurant' }
 `
 
 export const Logo = styled(Link)`
-  h1 {
-    font-size: 36px;
-    font-weight: 900;
-    color: ${({ theme }) => theme.colors.primary};
-    letter-spacing: -1px;
-  }
+  display: inline-flex;
+`
+
+export const LogoImage = styled.img`
+  width: 132px;
+  height: auto;
+  display: block;
+  object-fit: contain;
 `
 
 export const Nav = styled.nav`

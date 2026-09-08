@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import logo from '../../assets/logo.png'
 import {
   HeaderContainer,
   Logo,
+  LogoImage,
   Nav,
   CartButton,
   AuthArea,
@@ -33,7 +35,7 @@ const Header = ({ cartCount = 0, onCartClick, variant = 'home' }: HeaderProps) =
         )}
 
         <Logo to="/">
-          <h1>efood</h1>
+          <LogoImage src={logo} alt="efood" />
         </Logo>
 
         {variant === 'restaurant' ? (

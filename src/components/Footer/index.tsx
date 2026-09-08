@@ -1,11 +1,12 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
+import logo from '../../assets/logo.png'
 import { FooterContainer, Logo, Social, Copyright } from './styles'
 
 const Footer = () => {
   return (
     <FooterContainer>
       <Logo>
-        <h2>efood</h2>
+        <img src={logo} alt="efood" />
       </Logo>
       <Social>
         <a href="#" aria-label="Instagram">
