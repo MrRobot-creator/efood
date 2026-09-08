@@ -9,10 +9,10 @@ export const FooterContainer = styled.footer`
 
 export const Logo = styled.div`
   img {
-    width: 132px;
-    height: auto;
+    width: 120px;
+    height: 60px;
     display: block;
-    margin: 0 auto 32px;
+    margin: 0 auto 40px;
     object-fit: contain;
   }
 `
