@@ -11,8 +11,9 @@ import {
 import {
   validateDelivery,
   validatePayment,
-  generateOrderId
+  onlyDigits
 } from './utils'
+import { submitCheckout } from '../../services/api'
 import { Overlay, Sidebar } from './styles'
 import CartItems from './CartItems'
 import DeliveryForm from './DeliveryForm'
@@ -34,6 +35,7 @@ const Cart = ({
   const [payment, setPayment] = useState<PaymentData>(emptyPayment)
   const [error, setError] = useState('')
   const [orderId, setOrderId] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const productsTotal = items.reduce(
     (acc, item) => acc + item.preco * item.quantity,
@@ -48,6 +50,7 @@ const Cart = ({
       setDelivery(emptyDelivery)
       setPayment(emptyPayment)
       setOrderId('')
+      setIsSubmitting(false)
     }
   }, [isOpen])
 
@@ -74,16 +77,45 @@ const Cart = ({
     setStep('payment')
   }
 
-  const handlePaymentSubmit = (e: FormEvent) => {
+  const handlePaymentSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    if (isSubmitting) return
+
     const validationError = validatePayment(payment)
     if (validationError) {
       setError(validationError)
       return
     }
     setError('')
-    setOrderId(generateOrderId())
-    setStep('success')
+    setIsSubmitting(true)
+
+    try {
+      const result = await submitCheckout({
+        products: items.map((item) => ({ id: item.id, price: item.preco })),
+        delivery,
+        payment: {
+          card: {
+            name: payment.cardName,
+            number: onlyDigits(payment.cardNumber),
+            code: Number(payment.cvv),
+            expires: {
+              month: Number(payment.expiresMonth),
+              year: Number(payment.expiresYear)
+            }
+          }
+        }
+      })
+      setOrderId(result.orderId)
+      setStep('success')
+    } catch (checkoutError) {
+      setError(
+        checkoutError instanceof Error
+          ? checkoutError.message
+          : 'Não foi possível finalizar o pedido. Tente novamente.'
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleFinish = () => {
@@ -104,7 +136,7 @@ const Cart = ({
   }
 
   return (
-    <Overlay onClick={onClose}>
+    <Overlay onClick={() => !isSubmitting && onClose()}>
       <Sidebar onClick={(e: React.MouseEvent) => e.stopPropagation()}>
         {step === 'cart' && (
           <CartItems items={items} onRemove={onRemove} onContinue={goToDelivery} />
@@ -128,6 +160,7 @@ const Cart = ({
             payment={payment}
             total={total}
             error={error}
+            isSubmitting={isSubmitting}
             onChange={updatePayment}
             onSubmit={handlePaymentSubmit}
             onBack={() => {

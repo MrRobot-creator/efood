@@ -7,12 +7,21 @@ type Props = {
   payment: PaymentData
   total: number
   error: string
+  isSubmitting: boolean
   onChange: (field: keyof PaymentData, value: string) => void
   onSubmit: (e: FormEvent) => void
   onBack: () => void
 }
 
-const PaymentForm = ({ payment, total, error, onChange, onSubmit, onBack }: Props) => {
+const PaymentForm = ({
+  payment,
+  total,
+  error,
+  isSubmitting,
+  onChange,
+  onSubmit,
+  onBack
+}: Props) => {
   const handle =
     (field: keyof PaymentData, transform?: (v: string) => string) =>
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -50,7 +59,7 @@ const PaymentForm = ({ payment, total, error, onChange, onSubmit, onBack }: Prop
             <input
               id="cvv"
               value={payment.cvv}
-              onChange={handle('cvv', (v) => onlyDigits(v).slice(0, 4))}
+              onChange={handle('cvv', (v) => onlyDigits(v).slice(0, 3))}
               required
             />
           </Field>
@@ -75,8 +84,10 @@ const PaymentForm = ({ payment, total, error, onChange, onSubmit, onBack }: Prop
             required
           />
         </Field>
-        <Button type="submit">Finalizar pagamento</Button>
-        <Button type="button" onClick={onBack}>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Enviando pedido...' : 'Finalizar pagamento'}
+        </Button>
+        <Button type="button" onClick={onBack} disabled={isSubmitting}>
           Voltar para a edição de endereço
         </Button>
       </Form>

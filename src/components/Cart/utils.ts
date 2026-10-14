@@ -34,6 +34,3 @@ export const validatePayment = (payment: PaymentData): string => {
   if (!payment.expiresYear || payment.expiresYear.length < 2) return 'Ano de vencimento inválido.'
   return ''
 }
-
-export const generateOrderId = () =>
-  String(Math.floor(Math.random() * 900000) + 100000)
